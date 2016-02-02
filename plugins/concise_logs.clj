@@ -1,17 +1,5 @@
-;Copyright 2015 PLUMgrid Inc.
-
-;Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
-;You may obtain a copy of the License at:
-
-;http://www.apache.org/licenses/LICENSE-2.0
-
-;Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS"
-;BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific
-;language governing permissions and limitations under the License.
-
 (include "../pg_utils.clj")
 (require '[plugins.process-crash-relaunch :as PC]) ; TODO: Change it to PCR
-(require '[plugins.process-crash-count :as PCC])
 (require '[plugins.director-bootup-stage1 :as DBS1])
 (require '[plugins.director-bootup-stage2 :as DBS2])
 (require '[plugins.director-exit :as DE])
@@ -20,6 +8,7 @@
 (require '[plugins.resource-load :as RL])
 (require '[plugins.ifup :as IFU])
 (require '[plugins.topo-load-via-cdb :as TLVCDB])
+(require '[plugins.topo-load-via-api :as TLVAPI])
 
 
 ; Take a raw stream and create a PG stream message out of it
@@ -43,18 +32,17 @@
     (where (not (expired? event))
       (default :ttl 10
         (pg-stream
-          (where (re-find #"service_directory_.*|system_manager_.*|HealthMonitorProcessFailure" (:handler event))
-            (where (re-find #"\[process_child_exit\]: .*|\[report_process_failure\]: .*|activate_service: .*" (:pgmsg event))
+          (where (re-find #"RPCIF_system_manager.*|service_directory_.*|system_manager_.*|HealthMonitorProcessFailure.*" (:handler event))
+            (where (re-find #"\[process_child_exit\]: .*|\[report_process_failure\]:.*|activate_service: .*|EVENT.*|\[service_has_recovered\].*|process_death.*" (:pgmsg event))
               (PC/process-crash-relaunch)
-              )
-            (where (re-find #"\[process_child_exit\]: .*" (:pgmsg event))
-              (PCC/process-crash-count)
-              )
-            (where (re-find #"\[init\]:.*|\[operator\(\)\]:.*" (:pgmsg event))
-              (DBS2/director-bootup-stage2)
               )
             (where (re-find #".* CPU load: .* Mem load: .*" (:pgmsg event))
               (RL/resource-load)
+              )
+            )
+          (where (re-find #"service_directory_.*|RPCIF_service_directory.*|ServiceDirectory.*" (:handler event))
+            (where (re-find #"\[init\]:.*|\[operator\(\)\]:.*|EVENT.*|init:.*" (:pgmsg event))
+              (DBS2/director-bootup-stage2)
               )
             )
           (where (re-find #"SMLite_.*" (:handler event))
@@ -71,8 +59,8 @@
               (ERC/edge-reconnect)
               )
             )
-          (where (re-find #"RPCIF_.*|PE_.*" (:handler event))
-            (where (re-find #"EVENT .*|dp_pgname.*|ifup_internal: .*|ifup_latency: .*|dp_pgname .*" (:pgmsg event))
+          (where (re-find #"RPCIF_.*|PE_.*|pem_helper_*" (:handler event))
+            (where (re-find #"EVENT .*|dp_pgname.*|ifup_internal: .*|ifup_latency: .*|dp_pgname .*|\[notify_ifup_internal\].*|notify_ifup_internal_fpool.*|print_ifc_event.*" (:pgmsg event))
               (IFU/ifup)
               )
             )
@@ -81,34 +69,36 @@
               (TLVCDB/topo-load-via-cdb)
               )
             )
+;          (where (re-find #"rest_gateway_.*|ConnectivityManager.*|rest_gateway_.*" (:handler event))
+;            (where (re-find #"PUT .*|Topology.*|Dom0::.*|requested.*|GatewayRequest.*" (:pgmsg event))
+;              (TLVAPI/topo-load-via-api)
+;              )
+;            )
           )
         )
       )
     (expired
       #(prn "******* Expired1> ******** " %)
-      (where (re-find #"process_crash_relaunch" (:service event))
+      (where (re-find #"process_crash_relaunch" (:plugin_type event))
         (PC/process-crash-relaunch-expired)
         )
-      (where (re-find #"process_crash_count" (:service event))
-        (PCC/process-crash-count-expired)
-        )
-      (where (re-find #"director_bootup_stage1" (:service event))
+      (where (re-find #"director_bootup_stage1" (:plugin_type event))
         (DBS1/director-bootup-stage1-expired)
         )
-      (where (re-find #"director_bootup_stage2" (:service event))
+      (where (re-find #"director_bootup_stage2" (:plugin_type event))
         (DBS2/director-bootup-stage2-expired)
         )
-      (where (re-find #"director_exit" (:service event))
-        (DE/director-exit-expired)
-        )
-      (where (re-find #"edge_bootup" (:service event))
+      (where (re-find #"edge_bootup" (:plugin_type event))
         (EB/edge-bootup-expired)
         )
-      (where (re-find #"edge_reconnect" (:service event))
+      (where (re-find #"edge_reconnect" (:plugin_type event))
         (ERC/edge-reconnect-expired)
         )
-      (where (re-find #"ifup" (:service event))
+      (where (re-find #"ifup" (:plugin_type event))
         (IFU/ifup-expired)
+        )
+      (where (re-find #"topo_load_via_cdb" (:plugin_type event))
+        (TLVCDB/topo-load-via-cdb-expired)
         )
       )
     )

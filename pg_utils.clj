@@ -1,14 +1,3 @@
-;Copyright 2015 PLUMgrid Inc.
-
-;Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
-;You may obtain a copy of the License at:
-
-;http://www.apache.org/licenses/LICENSE-2.0
-
-;Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS"
-;BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific
-;language governing permissions and limitations under the License.
-
 (require '[clojure.string :as str])
 (require '[clojure.java.io :as io])
 
@@ -25,13 +14,14 @@
 (defn parse-int [s]
   (Integer/parseInt (re-find #"\A-?\d+" s)))
 
-; Process the PG Message
-(defn process-raw-PG-msg[msg searchMsg]
+;;; Process the PG Message
+;;; Possible potential primary keys for later searches
+(defn process-raw-PG-msg[e searchMsg]
   (def pgmatch
     ;    (re-find #"(^[a-zA-Z0-9_]+) \[([0-9a-f]+):([0-9a-f]+):([0-9a-f]+)\]<([^>]+)>\[\D+\]: (.*)" msg)
     (re-find #"(^[a-zA-Z0-9_]+) \[([0-9a-f]+):([0-9a-f]+):([0-9a-f]+)\]<([^>]+)>\[(\d+)\]:(.*)" searchMsg)
     )
-  (assoc msg
+  (assoc e
     ;:service (get pgmatch 1)
     :handler (get pgmatch 1)
     :pgtxn (get pgmatch 2)
@@ -85,6 +75,22 @@
     (riemann.index/search (:index @riemann.config/core)))
   )
 
+; Search on basis of values of host and service
+(defn search-host-service [host-value service-value]
+  (->> (list 'and (list '= :host host-value)
+         (list '= :service service-value)
+         )
+    (riemann.index/search (:index @riemann.config/core)))
+  )
+
+;(defn search-host-service-plugintype [host-value service-value plugintype-value]
+;  (->> (list 'and (list '= :host host-value)
+;         ('and (list '= :service service-value)
+;               (list '= :plugin-type plugintype-value))
+;         )
+;    (riemann.index/search (:index @riemann.config/core)))
+;  )
+
 (defn update-index [myState entryStateList curr-event desc buildStateStream regex-match events]
   (clojure.string/join "\n"
     (map
@@ -96,6 +102,7 @@
                                          :pgstate myState
                                          :description desc
                                          :pgtxn (:pgtxn curr-event)
+                                         :handler (:handler curr-event)
                                          :time (:time curr-event)
                                          ) curr-event regex-match)]
         (prn "new-dt=" new-dt)
@@ -109,13 +116,16 @@
     )
   )
 
-(defn add-index [myState entryStateList curr-event desc buildStateStream regex-match]
+(defn add-index [myState entryStateList curr-event desc host-val service-val buildStateStream regex-match]
   ; Supply values which either does not change (follow fix pattern like pgstate) or default values.
   (prn "add: my state is: " myState)
   (let [new-dt (buildStateStream {
+                                   :description desc
+                                   :host host-val
+                                   :service service-val
+                                   :my_host (:host curr-event)
                                    :handler (:handler curr-event)
                                    :pgstate myState
-                                   :description desc
                                    :pgtxn (:pgtxn curr-event)
                                    :startTime (:time curr-event)
                                    :time (:time curr-event)
@@ -128,10 +138,10 @@
     )
   )
 
-; Call this function when
-; 1) key, on basis of which we will search, is part of event e.g pgtxn.
-(defn process-state-k1-s
-  ([myState entryStateList curr-event searchRe desc search-key service buildStateStream]
+;;;; Call this function if both keys, on basis of which you want to search, is part of your original event.
+;;;; (search keys would be among fields defined under process-raw-PG-msg).
+(defn process-state-ek1-ek2
+  ([myState entryStateList curr-event searchRe desc ek1 ek2 buildStateStream]
     ; Search whether event message matches with regex?
     (let [regex-match (re-find searchRe (:pgmsg curr-event))]
       ; if matches
@@ -140,15 +150,48 @@
         (if (not= entryStateList (vector))
           (do
             ; then there must be some entry in index. Search for that entry, And update the index.
-            (let [search-value ((keyword search-key) curr-event)]
-              (update-index myState entryStateList curr-event desc buildStateStream regex-match (search-k1-v1-s search-key search-value service))
+            (let [search-val1 ((keyword ek1) curr-event) search-val2 ((keyword ek2) curr-event)]
+              (update-index myState entryStateList curr-event desc buildStateStream regex-match (search-host-service search-val1 search-val2))
               )
             )
           ; This is a case when the state is starting state
-          (add-index myState entryStateList curr-event desc buildStateStream regex-match)
+          (do
+            (let [host-val ((keyword ek1) curr-event) service-val ((keyword ek2) curr-event)]
+              (add-index myState entryStateList curr-event desc host-val service-val buildStateStream regex-match)
+              )
+            )
           ))))
   ([myState entryStateList curr-event searchRe desc search-key service]
-    (process-state-k1-s myState entryStateList curr-event searchRe desc search-key service (fn [strm curr-event regexOut] strm))
+    (process-state-ek1-ek2 myState entryStateList curr-event searchRe desc search-key service (fn [strm curr-event regexOut] strm))
+    )
+  )
+
+;;;; Call this function if you have two keys on basis of which you search.
+;;;; One key is part of original event (You will get value of it from original event),
+;;;; while other key is your own defined key (you have to supply its value on your own).
+(defn process-state-ek1-mk2val
+  ([myState entryStateList curr-event searchRe desc ek1 mk2val buildStateStream]
+    ; Search whether event message matches with regex?
+    (let [regex-match (re-find searchRe (:pgmsg curr-event))]
+      ; if matches
+      (if (not= regex-match nil)
+        ; and if the state is not the starting state
+        (if (not= entryStateList (vector))
+          (do
+            ; then there must be some entry in index. Search for that entry, And update the index.
+            (let [search-val1 ((keyword ek1) curr-event)]
+              (update-index myState entryStateList curr-event desc buildStateStream regex-match (search-host-service search-val1 mk2val))
+              )
+            )
+          ; This is a case when the state is starting state
+          (do
+            (let [host-val ((keyword ek1) curr-event)]
+              (add-index myState entryStateList curr-event desc host-val mk2val buildStateStream regex-match)
+              )
+            )
+          ))))
+  ([myState entryStateList curr-event searchRe desc ek1 mk2val]
+    (process-state-ek1-mk2val myState entryStateList curr-event searchRe desc ek1 mk2val (fn [strm curr-event regexOut] strm))
     )
   )
 
@@ -187,7 +230,7 @@
           (add-index myState entryStateList curr-event desc buildStateStream regex-match)
           ))))
   ([myState entryStateList curr-event searchRe desc search-key regex-loc service]
-    (process-state-k1-s myState entryStateList curr-event searchRe desc search-key regex-loc service (fn [strm curr-event regexOut] strm))
+    (process-state-k1-l1-s myState entryStateList curr-event searchRe desc search-key regex-loc service (fn [strm curr-event regexOut] strm))
     )
   )
 
@@ -252,7 +295,15 @@
       (conj! tmp_lst_next_expected "analytics_manager")
       )
     )
+
+  (if (= nil (get tmp_lst_next_expected 0))
+    (do
+      (conj! tmp_lst_next_expected "CM")
+      )
+    )
+
   (persistent! tmp_lst_next_expected)
+
   )
 
 (defn str-to-regex [c]
@@ -274,3 +325,25 @@
       )
     )
   )
+
+;;;; Will remove the last character from string e.g 172.16.1.1} will be converted to 172.16.1.1
+(defn remove-from-end [s end]
+  (if (.endsWith s end)
+      (.substring s 0 (- (count s)
+                         (count end)))
+    s))
+
+;;;; Convert the Hex IP to dotted IP. e.g 0a161b1a will be converted to 10.22.27.26.
+(defn convert-hexip-to-dottedip [hexip]
+  (let [A (Integer/parseInt (clojure.string/join (take 2 hexip)) 16)
+        B (Integer/parseInt (clojure.string/join (take 2 (drop 2 hexip))) 16)
+        C (Integer/parseInt (clojure.string/join (take 2 (drop 4 hexip))) 16)
+        D (Integer/parseInt (clojure.string/join (take 2 (drop 6 hexip))) 16)]
+    (let [v [A B C D]]
+      (str/join "." v)
+      )
+    )
+  )
+
+;;;; Get time.
+(defn now [] (new java.util.Date))
