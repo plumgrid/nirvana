@@ -1,0 +1,21 @@
+{
+  "name": "nirvana",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://trauf@gerrit.plumgrid.com:29418/nirvana"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "argparse": "^1.0.3",
+    "riemann": "^1.0.1"
+  }
+}
+

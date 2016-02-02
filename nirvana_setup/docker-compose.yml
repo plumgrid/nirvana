@@ -1,0 +1,12 @@
+riemann_server:
+  build: riemann_server
+  container_name: riemann_server
+  ports:
+    - "15555:15555/udp"
+riemann_client:
+  build: riemann_client
+  container_name: riemann_client
+  ports:
+    - "6000:6000/udp"
+  links:
+    - riemann_server
