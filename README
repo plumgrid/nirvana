@@ -12,7 +12,7 @@ What is in this phase?
 ======================
 For POC, we have written few plugins which will analyze and correlate the log messages for
 1. Director Bootups
-2. Edge bootups
+2. Edge bootups 
 3. VM attached to edge
 4. Process crash and relaunched
 5. Director exit
@@ -21,6 +21,7 @@ For POC, we have written few plugins which will analyze and correlate the log me
 
 Nirvana will spit log messages against these evenets like below (taken from running demo)
 You will receive messages like below:
+Thu Jan 
 Thu Jan 28 09:48:45 PST 2016: Broker and SM on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 1.0 seconds)
 Thu Jan 28 09:48:48 PST 2016: VND 'Demo' created successfully (took0.0 secs) via CDB.
 Thu Jan 28 09:48:49 PST 2016: Service directory (service-directory-1278ae61) on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 4.0 seconds). All Director services are up and active.
