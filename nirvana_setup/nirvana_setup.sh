@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/bash -e
 
 DOCKER_COMPOSE_VER="1.5.2"
 step_st=1
-step_ed=5
+step_ed=4
 
 TEMP=`getopt -o S:E:h --long step_st:,step_ed:,help -n 'setup.sh' -- "$@"`
 eval set -- "$TEMP"
@@ -42,7 +42,10 @@ function setup() {
 
   4)
     echo "Bring up the docker containers"
-    sudo docker-compose up
+    sudo mkdir -p /opt/pg/log && sudo touch /opt/pg/log/nirvana_dockers.log
+    sudo chmod 666 /opt/pg/log/nirvana_dockers.log && sudo chown -R $USER:$USER /opt/pg/log/nirvana_dockers.log
+    sudo docker-compose up >& /opt/pg/log/nirvana_dockers.log &
+    echo "..." && sleep 5
     echo "============================================================================================================"
     echo " Your docker containers are up. Configure your nodes to send the logs to <docker_containers_host_IP>:6000 "
     echo " Sample configuration inside /etc/rsyslog.d/00-pg.conf may look like below"

@@ -1,6 +1,8 @@
 riemann_server:
   build: riemann_server
   container_name: riemann_server
+  volumes:
+    - /opt/pg/log:/opt/pg/log
   ports:
     - "15555:15555/udp"
 riemann_client:
