@@ -25,7 +25,7 @@
           :mac (get regex-match 4)
           :ip (get regex-match 5)
           :pid (get regex-match 7)
-          :next_expected "Starting ifup_internal" ; TODO: Come up with some way to get it automatically.
+          :next_expected "Starting ifup_internal" ; TODO: Come up with some way to get it automatically ...
           :ttl 10
           )
         )
