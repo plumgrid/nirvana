@@ -40,5 +40,5 @@ SETUP:
   2. Create file named 00-pg.conf in /etc/rsyslog.d/ on mahine whose logs you want to collect. Add following to the file
      $template ls_json,"{%timestamp:::date-rfc3339,jsonf:@timestamp%,%source:::jsonf:@source_host%,%msg:::json%}"
      :syslogtag,isequal,"pg:" @<IP-OF-DOCKER-CONTAINERS-HOST>:6000;ls_json
-  3. Restart rsyslog on nodes
+  3. Restart rsyslog on nodes.
 Riemann will start collecting and Analyzing the logs. You can see the nirvana logs in /opt/pg/log/plumgrid.info.log.
