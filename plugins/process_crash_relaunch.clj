@@ -245,7 +245,7 @@
         )
       )
 
-    (process-state-ek1-mk2val
+   (process-state-ek1-mk2val
       2016 [2015] e
       ; system_manager_4d1f1bb1 [5cc63441:2139:9]<013:04:48:56.859552>[143]: [process_child_exit]: pid 22877 done
       #"\[process_child_exit\]: pid (\d+) done"
@@ -256,12 +256,26 @@
         (do
           ; Process ‘bridge’ (pgname 'bridge_a615e671',ip_pid '10.22.27.26:23069' domain 'Demo' vnf_name '/0/connectivity/domain/Demo/ne/Bridge' ) exited with reason WIFSIGNALED and got relaunched successfully with ip_pid: 10.22.27.26:23807
           ; TODO: If demo & vnf_name is empty then it is operator message.
-          (def concise-msg (apply str (now) ": Process '" (:exited_service strm) "' (pgname '" (:pgname strm)
-                             "', ip_pid '" (:ip_where_proc_exit strm) ":" (:pid_of_exited_proc strm) "' domain '"
-                             (:domain_name strm) "' vnf_name '" (:vnf_name strm) "') exited with reason " (:exit_type strm)
-                             " and got relaunched successfully with ip_pid '" (:new_ip_pid strm) "'. The recovery took "
-                             (get-time-taken (:startTime strm) (:time strm)) " seconds"
-                             )
+          (let [exited-process (:exited_service strm)]
+            (if (or (= exited-process "rest_gateway") (= exited-process "cdb") (= exited-process "health_monitor")
+                    (= exited-process "tenant_manager") (= exited-process "analytics_manager")
+                    (= exited-process "CM") (= exited-process "vmw_agent") (= exited-process "metadata")
+                    (= exited-process "pem_master"))
+              (def concise-msg (apply str (now) ": Process '" (:exited_service strm) "' (pgname '" (:pgname strm)
+                                 "', ip_pid '" (:ip_where_proc_exit strm) ":" (:pid_of_exited_proc strm)
+                                 "') exited with reason " (:exit_type strm)
+                                 " and got relaunched successfully with ip_pid '" (:new_ip_pid strm) "'. The recovery took "
+                                 (get-time-taken (:startTime strm) (:time strm)) " seconds"
+                                 )
+                )
+              (def concise-msg (apply str (now) ": Process '" (:exited_service strm) "' (pgname '" (:pgname strm)
+                                 "', ip_pid '" (:ip_where_proc_exit strm) ":" (:pid_of_exited_proc strm) "' domain '"
+                                 (:domain_name strm) "' vnf_name '" (:vnf_name strm) "') exited with reason " (:exit_type strm)
+                                 " and got relaunched successfully with ip_pid '" (:new_ip_pid strm) "'. The recovery took "
+                                 (get-time-taken (:startTime strm) (:time strm)) " seconds"
+                                 )
+                )
+              )
             )
           )
         (def raw-status (:raw_status strm))
