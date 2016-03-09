@@ -1,11 +1,14 @@
 #!/bin/bash -e
 
 DOCKER_COMPOSE_VER="1.5.2"
-step_st=1
-step_ed=4
+STEP_ST=1
+STEP_ED=4
 
+echo "I am here"
 TEMP=`getopt -o S:E:h --long step_st:,step_ed:,help -n 'setup.sh' -- "$@"`
+echo "I am here 1"
 eval set -- "$TEMP"
+echo "I am here 2"
 while true ; do
   case "$1" in
     -S| --step_st ) STEP_ST="$2"; shift 2 ;;
