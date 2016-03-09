@@ -33,8 +33,8 @@ SETUP:
 ======
   1. Run setup-nirvana.sh script inside nirvana-setup directory.
   2. Create file named 00-pg.conf in /etc/rsyslog.d/ on machine whose logs you want to collect. Add following to the file
-     $template ls_json,"{%timestamp:::date-rfc3339,jsonf:@timestamp%,%source:::jsonf:@source_host%,%msg:::json%}"
-     :syslogtag,isequal,"pg:" @IP-OF-DOCKER-CONTAINERS-HOST:6000;ls_json <br />
+     *$template ls_json,"{%timestamp:::date-rfc3339,jsonf:@timestamp%,%source:::jsonf:@source_host%,%msg:::json%}"
+     :syslogtag,isequal,"pg:" @IP-OF-DOCKER-CONTAINERS-HOST:6000;ls_json <br />*
      Please dont forget to replace the IP-OF-DOCKER-CONTAINERS-HOST with actual IP address of machine where docker containers are running.
   3. Restart rsyslog on nodes.
 Riemann will start collecting and Analyzing the logs. You can see the nirvana logs in /opt/pg/log/plumgrid.info.log.
