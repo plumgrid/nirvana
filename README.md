@@ -1,29 +1,25 @@
-Version:
-========
+# Version:
 This is version 0.5.
 
-What are we doing?
-==================
+# What are we doing?
 In this project, we are aggregating events from our hosts and feed them into a stream processing
 language to be manipulated, summarized and actioned.
 We will track the state of incoming combination of events and will build checks around them.
 
-What is in this phase?
-======================
+# What is in this phase?
 For POC, we have written few plugins which will analyze and correlate the log messages for
-1. Director Bootups
-2. Edge bootups 
-3. VM attached to edge
-4. Process crash and relaunched
-5. Director exit
-6. Edge exit
-7. Edge Reconnect
 
-Nirvana will spit log messages against these evenets like below (taken from running demo)
-You will receive messages like below:
-Thu Jan 
-Thu Jan 28 09:48:45 PST 2016: Broker and SM on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 1.0 seconds)
-Thu Jan 28 09:48:48 PST 2016: VND 'Demo' created successfully (took0.0 secs) via CDB.
+1. Director Bootups
+2. Edge bootups
+3. VM attached to edge
+4.  Process crash and relaunched
+5.  Director exit
+6.  Edge exit
+7.  Edge Reconnect
+
+Nirvana will spit smart log messages against these evenets like below (taken from running demo)
+
+Thu Jan 28 09:48:45 PST 2016: Broker and SM on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 1.0 seconds)Thu Jan 28 09:48:48 PST 2016: VND 'Demo' created successfully (took0.0 secs) via CDB.
 Thu Jan 28 09:48:49 PST 2016: Service directory (service-directory-1278ae61) on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 4.0 seconds). All Director services are up and active.
 Thu Jan 28 09:48:49 PST 2016: Service directory (service-directory-f4e45251) on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 5.0 seconds). All Director services are up and active.
 Thu Jan 28 09:48:50 PST 2016: Compute node on <muneeb-pc> <10.22.27.51> got initialized successfully (took 1.0 seconds).
