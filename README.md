@@ -17,18 +17,17 @@ For POC, we have written few plugins which will analyze and correlate the log me
 6.  Edge exit
 7.  Edge Reconnect
 
-Nirvana will spit smart log messages against these evenets like below (taken from running demo)
+While the regular distributed logs generates thousands of log messages, Nirvana will spit quite a few log messages against these evenets like below (taken from running demo)
 
-Thu Jan 28 09:48:45 PST 2016: Broker and SM on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 1.0 seconds)Thu Jan 28 09:48:48 PST 2016: VND 'Demo' created successfully (took0.0 secs) via CDB.
-Thu Jan 28 09:48:49 PST 2016: Service directory (service-directory-1278ae61) on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 4.0 seconds). All Director services are up and active.
-Thu Jan 28 09:48:49 PST 2016: Service directory (service-directory-f4e45251) on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 5.0 seconds). All Director services are up and active.
-Thu Jan 28 09:48:50 PST 2016: Compute node on <muneeb-pc> <10.22.27.51> got initialized successfully (took 1.0 seconds).
-Thu Jan 28 09:50:46 PST 2016: Interface (name:tap1, type:access-vm, mac:00:00:00:00:00:01, uuid:1) successfully attached to edge PE-a7ac0691 <muneeb-pc> <10.22.27.51> (took 0.0 seconds).
-Thu Jan 28 09:51:40 PST 2016: Process 'bridge' (pgname 'bridge-57b5ae71', ip-pid '10.22.27.51:22338' domain 'Demo' vnf-name '/0/connectivity/domain/Demo/ne/Bridge') exited with reason WIFEXITED and got relaunched successfully with ip-pid '10.22.27.51:23347'. The recovery took 0.0 seconds
+Thu Jan 28 09:48:45 PST 2016: Broker and SM on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 1.0 seconds) <br />
+Thu Jan 28 09:48:48 PST 2016: VND 'Demo' created successfully (took0.0 secs) via CDB. <br />
+Thu Jan 28 09:48:49 PST 2016: Service directory (service-directory-1278ae61) on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 4.0 seconds). All Director services are up and active. <br />
+Thu Jan 28 09:48:49 PST 2016: Service directory (service-directory-f4e45251) on director <muneeb-pc> <10.22.27.51> got initialized successfully (took 5.0 seconds). All Director services are up and active. <br />
+Thu Jan 28 09:48:50 PST 2016: Compute node on <muneeb-pc> <10.22.27.51> got initialized successfully (took 1.0 seconds). <br />
+Thu Jan 28 09:50:46 PST 2016: Interface (name:tap1, type:access-vm, mac:00:00:00:00:00:01, uuid:1) successfully attached to edge PE-a7ac0691 <muneeb-pc> <10.22.27.51> (took 0.0 seconds). <br />
+Thu Jan 28 09:51:40 PST 2016: Process 'bridge' (pgname 'bridge-57b5ae71', ip-pid '10.22.27.51:22338' domain 'Demo' vnf-name '/0/connectivity/domain/Demo/ne/Bridge') exited with reason WIFEXITED and got relaunched successfully with ip-pid '10.22.27.51:23347'. The recovery took 0.0 seconds. <br />
 
-I bet that you have noticed the conciseness of log messages. The distributed system
-produced a huge number of log messages. Nirvana is nicely summarizing and analyzing
-the log messages.
+You can see that Nirvana is nicely summarizing and analyzing the regular log messages.
 
 SETUP:
 ======
