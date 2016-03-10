@@ -18,6 +18,8 @@ Following is the high level diagram <br />
 SETUP:
 ======
   1. Run setup-nirvana.sh script inside nirvana-setup directory.
+     It will install docker, docker-compose.
+     It will also build the images for log aggregator (riemann_client) and your stream processor (riemann_server).
   2. Create file named 00-pg.conf in /etc/rsyslog.d/ on machine whose logs you want to collect. Add following to the file
      *$template ls_json,"{%timestamp:::date-rfc3339,jsonf:@timestamp%,%source:::jsonf:@source_host%,%msg:::json%}"
      :syslogtag,isequal,"pg:" @IP-OF-DOCKER-CONTAINERS-HOST:6000;ls_json <br />*
