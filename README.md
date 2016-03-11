@@ -19,12 +19,21 @@ Following is the high level diagram <br />
 
 SETUP:
 ======
-  1. ** Forward messages to central server: ** Create file named 00-fwd-to-central-server.conf in /etc/rsyslog.d/ on machine whose logs you want to collect. An example configuration looks like following
-     *$template ls_json,"{%timestamp:::date-rfc3339,jsonf:@timestamp%,%source:::jsonf:@source_host%,%msg:::json%}"
-     :syslogtag,isequal,"pg:" @IP-OF-DOCKER-CONTAINERS-HOST:6000;ls_json <br />*
-     Please dont forget to replace the IP-OF-DOCKER-CONTAINERS-HOST with actual IP address of machine where docker containers are running.
-  2. Run setup-nirvana.sh script inside nirvana-setup directory.
+  1. **Install necessary packages and build docker images on central server:** You will need docker and docker-compose to build images. Run setup-nirvana.sh script inside nirvana-setup directory.
      It will install docker, docker-compose.
      It will also build the images for log aggregator (riemann_client) and your stream processor (riemann_server).
-  3. Restart rsyslog on nodes.
-Riemann will start collecting and Analyzing the logs. You can see the nirvana logs in /opt/pg/log/plumgrid.info.log.
+     Moreover, it will bring up the docker containers.
+     You should see riemann_client and riemann_server containers up and running.
+  2. **Forward messages to central server:** Create file named 00-fwd-to-central-server.conf in /etc/rsyslog.d/ on machine whose logs you want to collect. An example configuration to forward all syslog messages over UDP looks like following
+     *.* @CENTRAL-SERVER-IP:6000
+      FOR TCP, it looks like
+     *.* @@CENTRAL-SERVER-IP:6000
+     A more complex configuration looks like below
+     *$template ls_json,"{%timestamp:::date-rfc3339,jsonf:@timestamp%,%source:::jsonf:@source_host%,%msg:::json%}"
+     :syslogtag,isequal,"pg:" @CENTRAL-SERVER-IP:6000;ls_json <br />*
+     Please dont forget to replace the IP-OF-DOCKER-CONTAINERS-HOST with actual IP address of machine where docker containers are running.
+  3. **Make forwarding configuration effective:** 
+     Restart rsyslog service on nodes (on ubuntu 14.04, just say "sudo service rsyslog restart"). 
+Your nodes will start sending messages to central server. Riemann client will recieve those messages and will forward the messages to Riemann server in format appropriate to client. 
+  4. **smartlogs files**: 
+     You can see the smart log messages under /opt/pg/log/plumgrid.info.log.
