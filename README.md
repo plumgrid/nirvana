@@ -9,20 +9,22 @@ Objective 1: A non-expert should be able to extract the distributed system’s c
 Objective 2 (Longer term): A non-expert should be able to codify the knowledge of system components into a rule engine.
 
 # Design and Architecture:
-The distributed logs are collected in a central location where they are analyzed by a “Stream Processing” engine. The stream processing engine is written to work like a state machine where it can track all the transition from start to finish. If the state machine does not completes the transition and gets stuck it will time out and generate an error report with last know state where it got stuck. 
-The current prototypes are built using riemann as stream processor.
-The statemachine don’t need to capture all the states that exists in the system as that will make it a very difficult task. The idea is to approximately capture the state transitions. i.e. if a service is requested from SD at some point it will need to reply with a pgname of the service, we don't need to map every single thing that happens underneath this request. (If needed it can be done but there is a cost so it can be decided on need basis).
+Following is how various component of system will interact with each other
+  1. Nodes, whose log messages you want to analyze, needs to send their messages to central node. This is accomplished by pushing a simple rsyslog configuration.
+  2. The distributed logs are collected in a central location where they are analyzed by a “Stream Processing” engine. 
+  3. The stream processing engine is written to work like a state machine where it can track all the transition from start to finish. If the state machine does not completes the transition and gets stuck it will time out and generate an error report with last know state where it got stuck. The current prototypes are built using riemann as stream processor.
+  5. The statemachine don’t need to capture all the states that exists in the system as that will make it a very difficult task. The idea is to approximately capture the state transitions. 
 Following is the high level diagram <br />
 ![Alt text](./images/design.png?raw=true "Title")
 
 SETUP:
 ======
-  1. Run setup-nirvana.sh script inside nirvana-setup directory.
-     It will install docker, docker-compose.
-     It will also build the images for log aggregator (riemann_client) and your stream processor (riemann_server).
-  2. Create file named 00-pg.conf in /etc/rsyslog.d/ on machine whose logs you want to collect. Add following to the file
+  1. ** Forward messages to central server: ** Create file named 00-fwd-to-central-server.conf in /etc/rsyslog.d/ on machine whose logs you want to collect. An example configuration looks like following
      *$template ls_json,"{%timestamp:::date-rfc3339,jsonf:@timestamp%,%source:::jsonf:@source_host%,%msg:::json%}"
      :syslogtag,isequal,"pg:" @IP-OF-DOCKER-CONTAINERS-HOST:6000;ls_json <br />*
      Please dont forget to replace the IP-OF-DOCKER-CONTAINERS-HOST with actual IP address of machine where docker containers are running.
+  2. Run setup-nirvana.sh script inside nirvana-setup directory.
+     It will install docker, docker-compose.
+     It will also build the images for log aggregator (riemann_client) and your stream processor (riemann_server).
   3. Restart rsyslog on nodes.
 Riemann will start collecting and Analyzing the logs. You can see the nirvana logs in /opt/pg/log/plumgrid.info.log.
