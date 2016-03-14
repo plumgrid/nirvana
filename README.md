@@ -37,3 +37,28 @@ SETUP:
 Your nodes will start sending messages to central server. Riemann client will recieve those messages and will forward the messages to Riemann server in format appropriate to client. 
   4. **smartlogs files**: 
      You can see the smart log messages under /opt/pg/log/plumgrid.info.log.
+
+How to write PLUGIN:
+====================
+An easy to use infrastructure has been laid down to analyze and summarized logs. One does NOT need to be expert of Clojure or Riemann to write the plugin. 
+Following are the list of all steps involved in writing plugin
+  1. **Define the state machine of the use-case:**
+     An example snippet from a state machine is given below
+     *RPCIF_service_directory [10c044ae:1:6]<013:04:57:37.544513>[1]: EVENT 'service_directory boot' txn_id 526cc5e8 pid 8265 {service_directory boot} <br />
+     ServiceDirectory [10c044ae:1:8]<018:16:11:45.004840>[1]: init:  my_station_id_ = 6a0f5151 ip 172.16.1.1 {service_directory ip} <br />
+     service_directory_2fa5b111 [10c044ae:1:9]<352:05:17:26.955312>[17]: [init]: rest_gateway is active {rest_gateway is active}*  
+  2. **Assign a unique numeric id to plugin:**
+     Go to plugins --> start_states_consts.clj and mention <plugin-name> <numeric-id>
+     *:director-bootup-stage2-state 100*
+  3. **Create plugin file:**
+     Create a file director-bootup-stage2-state inside plugins directory.
+  4. **Define function:**
+     Define a function director-bootup-stage2 in plugin file. Function will hold all the logic to define states of state machine given in step 1. It will also hold the regex to extract useful information from logs.
+  5. **Define individual states:**
+     ![Alt text](./images/plugin_state_definition.png?raw=true "Title")
+  6. **Define summarized message:**
+     Once last state in your state machine hits, you can extract all the information, saved earlier in DB, and show them in nicely summarized manner. 
+
+Please see nirvana/plugins/director_bootup_stage2.clj file for better understanding.
+
+**NOTE:** We are planning to work on introducing further abstraction in plugin writing. 
