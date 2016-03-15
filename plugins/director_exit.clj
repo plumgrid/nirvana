@@ -31,7 +31,7 @@
       )
     (process-state-ek1-ek2
       151 [150] e
-      ; SMLite_ac100101 [528d50c8:6:5]<352:05:18:28.367709>[29]: [child_exit_monitor]: Broker pid 127 exited with status 256
+      ; SMLite_ac100101 [528d50c8:6:5]<352:05:18:28.367709>[29]: [child_exit_monitor]: Broker pid 127 exited with status 255
       #"\[child_exit_monitor\]: Broker pid (\d+) exited with status (\d)"
       "Broker exit"
       "handler"
