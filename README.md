@@ -58,7 +58,10 @@ Following are the list of all steps involved in writing plugin
      ![Alt text](./images/plugin_state_definition.png?raw=true "Title")
   6. **Define summarized message:**
      Once last state in your state machine hits, you can extract all the information, saved earlier in DB, and show them in nicely summarized manner. 
-
 Please see nirvana/plugins/director_bootup_stage2.clj file for better understanding.
 
 **NOTE:** We are planning to work on introducing further abstraction in plugin writing. 
+
+Summary:
+========
+In summary, you can use easy-to-write plugins to analyze complicated distributed log message and to show nicely summarized smart logs using nirvana. Please contact tahir@plumgrid.com for comments and questions.
