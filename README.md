@@ -7,9 +7,8 @@ Distributed systems are hard to design and even harder to debug. Different compo
 In project Nirvana, we attempt to reduce this knowledge gap in the cloud management domain by building a monitoring system that can be built, extended and maintained by non-experts. More specifically, our objective is to design a system that can meet the following two objectives: <br />
 Objective 1: A non-expert should be able to extract the distributed system’s components and the interactions between the components. <br />
 Objective 2: A non-expert should be able to codify the knowledge of system components into a rule engine.
-
 Lets discuss those objectives one by one.  <br />
-Objective-1: Lets take an example. Assume following distributed log scenario where 3 nodes are involved.
+**Objective-1**: Lets take an example. Assume following distributed log scenario where 3 nodes are involved.
 ![Alt text](./images/distributed_nodes_interaction.png?raw=true "Title")
 
 In an ideal scenario all the error's generated on Node-2/Node-3 will be captured and send back as response to Node-1 and the exact error reported to the user will reflect where the problem was. 
@@ -17,7 +16,7 @@ Practically speaking the errors are not captured cleanly and Node-1 just returns
 In such scenario Nirvana can be plugged with a rudimentary state machine view of the sequence of events that are expected for a task. It will track all such transactions and report back for each transaction where exactly the failure was seen and for which JOBID. 
 The user will need to look for the JOB ID in nirvana logs and will immediately find the problem with where it happened. 
 Nirvana can analyze all the transaction that are happening in parallel,  if any of the dependent transaction fails or times out it will see it and notify the user. <br />
-Objective-2: Nirvana provides you an easy to write way to write analysis plugins for your logs. One does not need to be expert of Clojure/Riemann to write analysis plugins using Nirvana as it abstracts lot of complexity for you by providing utility functions. Please see "How to write plugins" section for further details.
+**Objective-2:** Nirvana provides you an easy to write way to write analysis plugins for your logs. One does not need to be expert of Clojure/Riemann to write analysis plugins using Nirvana as it abstracts lot of complexity for you by providing utility functions. Please see "How to write plugins" section for further details.
 
 # Design and Architecture:
 Following is how various component of system will interact with each other
