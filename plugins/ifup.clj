@@ -13,7 +13,7 @@
     (process-state-ek1-mk2val
       start-state [] e
       ;RPCIF_P2P [0c135c91:855:6]<018:19:52:07.845676>[5]: EVENT 'ifup tap1 access_vm 1 00:00:00:00:00:01 ip 10.10.1.51' txn_id 0c135c91 pid 16506
-      #"EVENT 'ifup (\S+) (\S+) (\S+) (\S+) ip (\S+)' txn_id (\S+) pid (\d+)"
+      #"EVENT 'ifup (\S+) (\S+) (\S+) (\S+).* ip (\S+)' txn_id (\S+) pid (\d+)"
       "ifup started"
       "pgtxn"
       plugin-type
