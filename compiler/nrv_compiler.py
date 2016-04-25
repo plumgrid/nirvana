@@ -11,30 +11,31 @@ Options:
 """
 from docopt import docopt
 import sys
+import os
 import argparse
 import ply.lex as lex
 import ply.yacc as yacc
 from pprint import pprint
 
 test_data = '''
-State: StartingState
- >EntryState: []
- >MatchRe: "request_service.* request for service=\[([^\]]+)\] from (\S+)$"
- >Description: "Requets for service launch is received"
- >Extract service: (:service event)
- >Extract pgtxn: (:pgtxn event)
- >Extract host: (str/join "_" [(:pgtxn event) (get regexOut 1)])
- >Extract ttl: 10
- >Extract pgtype: "launchRequestTracker"
- >Extract startTime: (:pgtime event)
+State: "350"
+ > EntryState: [st1]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "request_service.* request for service=\[([^\]]+)\] from (\S+)$"
+ > Description: "Requets for service launch is received"
+ > Extract service: (:service event)
+ > Extract pgtxn: (:pgtxn event)
+ > Extract host: (str/join "_" [(:pgtxn event) (get regexOut 1)])
+ > Extract ttl: 10
+ > Extract pgtype: "launchRequestTracker"
+ > Extract startTime: (:pgtime event)
 '''
 
 class NVLexer(object):
     tokens = ( 'STATE','COLON','STRING','ENTRYSTATE','MATCHRE',
-          'DESCRIPTION','EXTRACT','LCURLY','RCURLY','NEWLINE',
-          'GT', 'LSQBKT', 'RSQBKT', 'QSTRING', 'COMMA',
-          'LPARN', 'RPARN', 'EXTRACT_EXPRESSION', 'NUMBER',
-          'EXCLUDING_PARAN'
+          'PRIMKEY', 'DESCRIPTION','EXTRACT', 'FUNCTION',
+          'GT', 'LSQBKT', 'RSQBKT', 'QSTRING',
+          'EXTRACT_EXPRESSION', 'NUMBER',
             )
     states = (
         ('extract','exclusive'),
@@ -43,11 +44,8 @@ class NVLexer(object):
     t_extract_ignore = ' \t\x0c'
     t_GT = r'\>'
     t_COLON = r'\:'
-    t_LCURLY = r'\{'
-    t_RCURLY = r'\}'
     t_LSQBKT = r'\['
     t_RSQBKT = r'\]'
-    t_COMMA = r','
 
     def __init__(self):
         self.lexer = lex.lex(module=self)
@@ -56,14 +54,6 @@ class NVLexer(object):
         r'\n+'
         t.lexer.lineno += t.value.count("\n")
         #return t
-
-    def t_LPARN(self, t):
-        r'\('
-        return t
-
-    def t_RPARN(self, t):
-        r'\)'
-        return t
 
     def t_extract_COLON(self, t):
         r'\:'
@@ -87,6 +77,10 @@ class NVLexer(object):
             t.lexer.begin('INITIAL')
             return t
 
+    def t_FUNCTION(self, t):
+        r'Function'
+        return t
+
     def t_STATE(self, t):
         r'(?i)state'
         return t
@@ -97,6 +91,10 @@ class NVLexer(object):
 
     def t_MATCHRE(self, t):
         r'MatchRe'
+        return t
+
+    def t_PRIMKEY(self, t):
+        r'primary_key'
         return t
 
     def t_DESCRIPTION(self, t):
@@ -122,6 +120,10 @@ class NVLexer(object):
         r'\"[^\n]*\"'
         return t
 
+    def t_NUMBER(self, t):
+      r'[0-9]+'
+      return t
+
     def t_extract_QSTRING(self, t):
         r'\"[^\n]*\"'
         if t.lexer.level == 0:
@@ -136,6 +138,10 @@ class NVLexer(object):
 
     def t_extract_EXCLUDING_PARAN(self, t):
         r'[^()]+'
+
+    def t_extract_error(self, t):
+        print("Illegal character '%s'" % t.value[0])
+        t.lexer.skip(1)
 
     def t_error(self, t):
         print("Illegal character '%s'" % t.value[0])
@@ -167,7 +173,6 @@ class NVParser(object):
       '''statelist : state statelist
        |
       '''
-      # print("IN STATELIST")
       # self.dbg_print(p)
       if (len(p) == 3):
           if p[2] and p[1]:
@@ -178,7 +183,7 @@ class NVParser(object):
               p[0] = [p[1]]
 
     def p_state(self, p):
-      '''state : STATE COLON STRING subitems'''
+      '''state : STATE COLON NUMBER subitems'''
       p[0] = {'name': p[3], 'config': p[4]}
 
     def p_subitems(self, p):
@@ -196,9 +201,11 @@ class NVParser(object):
 
     def p_subitem(self, p):
         '''subitem : entrystate
+                   | function
                    | description
                    | matchre
                    | extract
+                   | primkey
         '''
         p[0] = p[1]
 
@@ -208,19 +215,31 @@ class NVParser(object):
         p[0] = {'entrystate': p[5]}
 
     def p_trstatelist(self, p):
-        '''trstatelist : trstatelist  STRING
-        | STRING
+        '''trstatelist : NUMBER trstatelist
+        | NUMBER
         |
         '''
+        if len(p) == 1:
+          p[0] = []
         if len(p) == 2:
-            p[0] = [p[1]]
+            p[0] = [int(p[1])]
+        elif len(p) == 3:
+            p[0] = "[" + p[1] + " " + str(p[2][0]) + "]"
         elif len(p) == 4:
             p[0] = p[1]
             p[0] += [p[3]]
 
+    def p_function(self, p):
+        '''function : GT FUNCTION COLON QSTRING'''
+        p[0] = {'function': p[4]}
+
     def p_matchre(self, p):
         '''matchre : GT MATCHRE COLON QSTRING'''
         p[0] = {'matchre': p[4]}
+
+    def p_primkey(self, p):
+        '''primkey : GT PRIMKEY COLON QSTRING'''
+        p[0] = {'primkey': p[4]}
 
     def p_description(self, p):
         '''description : GT DESCRIPTION COLON QSTRING
@@ -248,31 +267,30 @@ class NVParser(object):
         pprint("    %s" % repr(p))
         pprint(p)
 
-arguments = docopt(__doc__);
-nvp = NVParser()
-if arguments['test']:
+#arguments = docopt(__doc__);
+#nvp = NVParser()
+#if arguments['test']:
     # lexer.input(test_data)
     #print("PARSING THE DATA")
     #r = yacc.parse(test_data, tracking=True)
-    r = nvp.parse(test_data)
-    pprint("Parsed output from YACC")
-    pprint(r)
-elif arguments['cli']:
-    while 1:
-        try:
-            s = raw_input('Riemann > ')
-        except EOFError:
-            break
-        if not s: continue
-        pprint(nvp.parse(s))
-elif arguments['file']:
-    fname = arguments['<filename>']
-    print("Opening File : " + fname)
-    f = open(fname)
-    data = f.read()
-    f.close()
-    r = nvp.parse(data)
-    pprint("Parsed output from YACC")
-    pprint(r)
-
+#    r = nvp.parse(test_data)
+#    pprint("Parsed output from YACC")
+#    pprint(r)
+#elif arguments['cli']:
+#    while 1:
+#        try:
+#            s = raw_input('Riemann > ')
+#        except EOFError:
+#            break
+#        if not s: continue
+#        pprint(nvp.parse(s))
+#elif arguments['file']:
+#    fname = arguments['<filename>']
+#    print("Opening File : " + fname)
+#    f = open(fname)
+#    data = f.read()
+#    f.close()
+#    r = nvp.parse(data)
+#    pprint("Parsed output from YACC")
+#    pprint(r)
 
