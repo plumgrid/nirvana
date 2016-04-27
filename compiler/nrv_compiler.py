@@ -35,7 +35,8 @@ class NVLexer(object):
     tokens = ( 'STATE','COLON','STRING','ENTRYSTATE','MATCHRE',
           'PRIMKEY', 'DESCRIPTION','EXTRACT', 'FUNCTION',
           'GT', 'LSQBKT', 'RSQBKT', 'QSTRING',
-          'EXTRACT_EXPRESSION', 'NUMBER',
+          'EXTRACT_EXPRESSION', 'NUMBER', 'PLUGINNAME',
+          'SMART_MSG','ERROR_SMART_MSG','LEDD_STRING_DDER',
             )
     states = (
         ('extract','exclusive'),
@@ -101,6 +102,18 @@ class NVLexer(object):
         r'Description'
         return t
 
+    def t_PLUGINNAME(self, t):
+        r'PluginName'
+        return t
+
+    def t_SMART_MSG(self, t):
+        r'SmartMessage'
+        return t
+
+    def t_ERROR_SMART_MSG(self, t):
+        r'ErrorSmartMessage'
+        return t
+
     def t_EXTRACT(self, t):
         r'Extract'
         t.lexer.begin('extract')
@@ -118,6 +131,11 @@ class NVLexer(object):
 
     def t_QSTRING(self, t):
         r'\"[^\n]*\"'
+        return t
+
+    # Langle Exclaimation Dash Dash - Dash Dash Exclaimation Rangle
+    def t_LEDD_STRING_DDER(self, t):
+        r'<!--[^/n].*--!>'
         return t
 
     def t_NUMBER(self, t):
@@ -168,6 +186,29 @@ class NVParser(object):
     def dbg_print(self, p):
         for idx in range(0, len(p)):
             print("\tP[%d]=%s" % (idx, p[idx]))
+
+    def p_plugin(self, p):
+        '''plugin : pluginname smart_msg error_smart_msg statelist
+        '''
+        if len(p) == 3:
+          p[0] = p[1] + p[2]
+        elif len(p) == 4:
+          p[0] = p[1] + p[2] + p[3]
+        elif len(p) == 5:
+          p[0] = p[1] + p[2] + p[3] + p[4]
+        self.dbg_print(p)
+
+    def p_pluginname(self, p):
+        '''pluginname : PLUGINNAME COLON QSTRING'''
+        p[0] = [{'pluginname': p[3]}]
+
+    def p_smart_msg(self, p):
+        '''smart_msg : SMART_MSG COLON LEDD_STRING_DDER'''
+        p[0] = [{'smart_msg': p[3]}]
+
+    def p_error_smart_msg(self, p):
+        '''error_smart_msg : ERROR_SMART_MSG COLON LEDD_STRING_DDER'''
+        p[0] = [{'error_smart_msg': p[3]}]
 
     def p_statelist(self, p):
       '''statelist : state statelist
