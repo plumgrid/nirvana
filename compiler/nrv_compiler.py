@@ -34,9 +34,9 @@ State: "350"
 class NVLexer(object):
     tokens = ( 'STATE','COLON','STRING','ENTRYSTATE','MATCHRE',
           'PRIMKEY', 'DESCRIPTION','EXTRACT', 'FUNCTION',
-          'GT', 'LSQBKT', 'RSQBKT', 'QSTRING',
+          'GT', 'LSQBKT', 'RSQBKT', 'QSTRING','FILETYPE',
           'EXTRACT_EXPRESSION', 'NUMBER', 'PLUGINNAME',
-          'SMART_MSG','ERROR_SMART_MSG','LEDD_STRING_DDER',
+          'SUCCESS_SMART_MSG','FAIL_SMART_MSG','LEDD_STRING_DDER',
             )
     states = (
         ('extract','exclusive'),
@@ -102,16 +102,20 @@ class NVLexer(object):
         r'Description'
         return t
 
+    def t_FILETYPE(self, t):
+        r'INFO|WARN|ERROR'
+        return t
+
     def t_PLUGINNAME(self, t):
         r'PluginName'
         return t
 
-    def t_SMART_MSG(self, t):
-        r'SmartMessage'
+    def t_SUCCESS_SMART_MSG(self, t):
+        r'SuccessSmartMessage'
         return t
 
-    def t_ERROR_SMART_MSG(self, t):
-        r'ErrorSmartMessage'
+    def t_FAIL_SMART_MSG(self, t):
+        r'FailSmartMessage'
         return t
 
     def t_EXTRACT(self, t):
@@ -188,8 +192,9 @@ class NVParser(object):
             print("\tP[%d]=%s" % (idx, p[idx]))
 
     def p_plugin(self, p):
-        '''plugin : pluginname smart_msg error_smart_msg statelist
+        '''plugin : pluginname success_smart_msg fail_smart_msg statelist
         '''
+        self.dbg_print(p)
         if len(p) == 3:
           p[0] = p[1] + p[2]
         elif len(p) == 4:
@@ -202,19 +207,20 @@ class NVParser(object):
         '''pluginname : PLUGINNAME COLON QSTRING'''
         p[0] = [{'pluginname': p[3]}]
 
-    def p_smart_msg(self, p):
-        '''smart_msg : SMART_MSG COLON LEDD_STRING_DDER'''
-        p[0] = [{'smart_msg': p[3]}]
+    def p_success_smart_msg(self, p):
+        '''success_smart_msg : SUCCESS_SMART_MSG COLON FILETYPE COLON LEDD_STRING_DDER'''
+        self.dbg_print(p)
+        p[0] = [{'success_smart_msg': p[5], 'success_file_type': p[3]}]
 
-    def p_error_smart_msg(self, p):
-        '''error_smart_msg : ERROR_SMART_MSG COLON LEDD_STRING_DDER'''
-        p[0] = [{'error_smart_msg': p[3]}]
+    def p_fail_smart_msg(self, p):
+        '''fail_smart_msg : FAIL_SMART_MSG COLON FILETYPE COLON LEDD_STRING_DDER'''
+        p[0] = [{'fail_smart_msg': p[5], 'fail_file_type': p[3]}]
 
     def p_statelist(self, p):
       '''statelist : state statelist
        |
       '''
-      # self.dbg_print(p)
+      #self.dbg_print(p)
       if (len(p) == 3):
           if p[2] and p[1]:
               p[0] = p[2] + [p[1]]
@@ -260,15 +266,11 @@ class NVParser(object):
         | NUMBER
         |
         '''
-        if len(p) == 1:
-          p[0] = []
         if len(p) == 2:
-            p[0] = [int(p[1])]
-        elif len(p) == 3:
-            p[0] = "[" + p[1] + " " + str(p[2][0]) + "]"
-        elif len(p) == 4:
             p[0] = p[1]
-            p[0] += [p[3]]
+            print "*** p[0]:%s p[1]:%s" % (p[0], p[1])
+        elif len(p) == 3:
+            p[0] = p[1] + " " + p[2]
 
     def p_function(self, p):
         '''function : GT FUNCTION COLON QSTRING'''
