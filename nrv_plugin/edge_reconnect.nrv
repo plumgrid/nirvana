@@ -1,0 +1,127 @@
+PluginName: "edge_reconnect"
+SuccessSmartMessage:INFO: <!-- ": Compute node on <" (:host strm) "> <" (:ip strm) "> got reconnected to director cluster (took "(get-time-taken (:startTime strm) (:time strm)) " seconds)." --!>
+
+FailSmartMessage:ERROR: <!-- ": Reconnection of compute node on <" (:my_host strm) "> <" (:ip strm) "> to director cluster failed. Last good known step is '"(:description strm) "'. Next expected step is '" (:next_expected strm) "'." --!>
+
+State: 250
+ > EntryState: []
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[nos_monitor\]: connection to NOS (\S+) failed"
+ > Description: "NOS connection failed"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract plugin_type: "edge_reconnect"
+ > Extract ip: (convert-hexip-to-dottedip (get-substr-after-last-char (:handler strm) "_"))
+ > Extract old_nos_id: (get regex-match 1)
+ > Extract next_expected: "NOS join success"
+ > Extract ttl: 10
+
+State: 251
+ > EntryState: [250]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[nos_monitor\]: NOS Join Success; NOS Id=(\S+)"
+ > Description: "NOS join success"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract new_nos_id: (get regex-match 1)
+ > Extract next_expected: "Restart PE condition met"
+
+State: 252
+ > EntryState: [251]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[nos_monitor\]: Restart PE Condition met"
+ > Description: "Restart PE condition met"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract next_expected: "NOS ID changed"
+
+State: 253
+ > EntryState: [252]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[nos_monitor\]: NOS ID Changed old_id:(\S+) new_id:(\S+)"
+ > Description: "NOS ID changed"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract next_expected: "entering old_nos_id"
+
+State: 254
+ > EntryState: [253]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[handle_nos_reconnect\]: entering old_nos_id (\S+)"
+ > Description: "entering old_nos_id"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract next_expected: "waiting for NOS readiness"
+
+State: 255
+ > EntryState: [254]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[handle_nos_reconnect\]: waiting for NOS readiness, iteration no: (\d+)"
+ > Description: "waiting for NOS readiness"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract next_expected: "NOS ready, Will start SE re-init sequence."
+
+State: 256
+ > EntryState: [255]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[handle_nos_reconnect\]: NOS ready, Will start SE re-init sequence."
+ > Description: "NOS ready, Will start SE re-init sequence."
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract next_expected: "killing SEM"
+
+State: 257
+ > EntryState: [256]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[handle_nos_reconnect\]: killing SE"
+ > Description: "killing SEM"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract next_expected: "Restart SEM"
+
+State: 258
+ > EntryState: [257]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[child_exit_monitor\]: Restarting se_manager now"
+ > Description: "Restart SEM"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract next_expected: "Waiting for previous SEM monitor to join"
+
+State: 259
+ > EntryState: [258]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[launch_sem\]: waiting for previous SEM monitor to join"
+ > Description: "Waiting for previous SEM monitor to join"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract next_expected: "launching SEM"
+
+State: 260
+ > EntryState: [259]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[launch_sem\]: SEM is being launched"
+ > Description: "launching SEM"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract next_expected: "launched SEM"
+
+State: 261
+ > EntryState: [260]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[launch_sem\]: se_manager launched, pid :(\d+)"
+ > Description: "launched SEM"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+ > Extract sem_pid: (get regex-match 1)
+ > Extract next_expected: "SEM is ready"
+
+State: 262
+ > EntryState: [261]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[rx_sm_msg_handler\]: SEM is ready"
+ > Description: "SEM is ready"
+ > primary_key: "handler"
+ > primary_key: "edge_reconnect"
+

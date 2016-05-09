@@ -1,0 +1,180 @@
+PluginName: "process_crash_relaunch"
+
+SuccessSmartMessage:INFO: <!-- "Process '" (:exited_service strm) "' (pgname '" (:pgname strm)"', ip_pid '" (:ip_where_proc_exit strm) ":" (:pid_of_exited_proc strm)"') exited with reason " (:exit_type strm)" and got relaunched successfully with ip_pid '" (:new_ip_pid strm) "'. The recovery took "(get-time-taken (:startTime strm) (:time strm)) " seconds" --!>
+
+FailSmartMessage:ERROR: <!-- "Process '" (:exited_service strm) "' (pgname '" (:pgname strm)"', ip_pid '" (:ip_where_proc_exit strm) ":" (:pid_of_exited_proc strm) "' domain '"(:domain_name strm) "' vnf_name '" (:vnf_name strm) "') exited with reason " (:exit_type strm)" and failed to restart.  Last good known state is '" (:description strm) "'. Next expected state is '"(:next_expected strm) "'." --!>
+
+State: 1000
+ > EntryState: [ ]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "EVENT 'report_process_failure' txn_id (\S+) pid (\d+)"
+ > Description: "process child exit event started"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract next_expected: "child exit event params"
+ > Extract ttl: 10
+
+State: 1001
+ > EntryState: [1000]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[process_child_exit\]: ippid (\S+):(\d+) Exited service (\S+) pgname (\S+)"
+ > Description: "child exit event params"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract ip_where_proc_exit: (get regex-match 1)
+ > Extract pid_of_exited_proc: (get regex-match 2)
+ > Extract exited_service: (get regex-match 3)
+ > Extract pgname: (remove-from-end (get regex-match 4) "}")
+ > Extract next_expected: "child exit type"
+
+State: 1002
+ > EntryState: [1001]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[process_child_exit\]: SIGCHILD child (\d+) returned raw status (\S+) and exit type=\[(\S+): .*"
+ > Description: "child exit type"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract raw_status: (get regex-match 2)
+ > Extract exit_type: (get regex-match 3)
+ > Extract next_expected: "SM report child exit to HM"
+
+State: 1003
+ > EntryState: [1002]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "Reporting process failure process_child_exit ; pgname (\S+)"
+ > Description: "SM report child exit to HM"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract next_expected: "HM report_process_failure started"
+
+State: 1004
+ > EntryState: [1003]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[report_process_failure\]: pgname (\S+) fail_from_exit (\d+) is_crash (\d+) sm_exit (\d+) ip_pid (\S+):(\d+)"
+ > Description: "HM report_process_failure started"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract next_expected: "HM report child exit to SD"
+
+State: 1005
+ > EntryState: [1004]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[report_process_failure\]: report_process_failure_with_retry for (\S+) is_crash (\d+) ip_pid (\S+):(\d+)"
+ > Description: "HM report child exit to SD"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract next_expected: "SD report_process_failure started"
+
+State: 1006
+ > EntryState: [1005]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[report_process_failure\]: failed pgname (\S+) is_crash (\d+) match_pid (\S+):(\d+) failure reason (\d+)"
+ > Description: "SD report_process_failure started"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract next_expected: "SD report_process_failure params"
+
+State: 1007
+ > EntryState: [1006]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[report_process_failure\]: service_name '(\S+)' ip_pid '(\S+):(\d+)' pgname '(\S+)'"
+ > Description: "SD report_process_failure params"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract next_expected: "SD process_death started"
+
+State: 1008
+ > EntryState: [1007]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[report_process_failure\]: service_name '(\S+)' ip_pid '(\S+):(\d+)' pgname '(\S+)' domain '(\S+)' vnf_name '(\S+)'"
+ > Description: "SD report_process_failure params"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract domain_name: (get regex-match 5)
+ > Extract vnf_name: (str/replace (get regex-match 6) #"\\" "")
+ > Extract next_expected: "SD process_death started"
+
+State: 1009
+ > EntryState: [1007 1008]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "process_death:  dying_pgname = (\S+) \(reason=(\d+)\) restart version (\S+)"
+ > Description: "SD process_death started"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract next_expected: "SD restart policy"
+
+State: 1010
+ > EntryState: [1009]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "process_death:  SD will relaunch pgname (\S+) with restartable policy for service_name=(\S+)"
+ > Description: "SD restart policy"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract next_expected: "SD restart policy"
+
+State: 1011
+ > EntryState: [1010]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "process_death:  process_death: pgname (\S+) local_path '(\S+)'"
+ > Description: "process_death started"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract plugin_type: "process_crash_relaunch"
+ > Extract next_expected: "process_death finished"
+
+State: 1012
+ > EntryState: [1011]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[report_process_failure\]: process_death service (\S+) done with status '(\S+)'"
+ > Description: "process_death finished"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract next_expected: "SD new service ip_pid"
+
+State: 1013
+ > EntryState: [1012]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[service_has_recovered\]: success service (\S+) pgname (\S+) ip_pid (\S+)"
+ > Description: "SD new service ip_pid"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract new_ip_pid: (remove-from-end (get regex-match 3) "}")
+ > Extract next_expected: "SD report_process_failure finished"
+
+State: 1014
+ > EntryState: [1013]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[report_process_failure\]: relaunched service (\S+) successfully"
+ > Description: "SD report_process_failure finished"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract next_expected: "HM report_process_failure started"
+
+State: 1015
+ > EntryState: [1014]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[report_process_failure\]: report_process_failure_with_retry for (\S+) DONE, status=(\S+)"
+ > Description: "HM report_process_failure started"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+ > Extract next_expected: "process child exit event finished"
+
+State: 1016
+ > EntryState: [1015]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[process_child_exit\]: pid (\d+) done"
+ > Description: "process child exit event finished"
+ > primary_key: "pgtxn"
+ > primary_key: "process_crash_relaunch"
+
+

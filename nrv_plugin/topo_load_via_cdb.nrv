@@ -1,0 +1,40 @@
+PluginName: "topo_load_via_cdb"
+SuccessSmartMessage:INFO: <!-- ": VND '" (:domain_name strm) "' created successfully (took"(get-time-taken (:startTime strm) (:time strm)) " secs) via CDB." --!>
+FailSmartMessage:ERROR: <!-- ": VND '" (:domain_name strm) "' creation failed. Last good known state is '" (:description strm) "'. Next expected state is '" (:next_expected strm)"'. Transaction id: " (:pgtxn strm) "." --!>
+
+State: 400
+ > EntryState: []
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "Requesting cdb to post config for :(\S+)"
+ > Description: "CM request CDB to post config"
+ > primary_key: "pgtxn"
+ > primary_key: "topo_load_via_cdb"
+ > Extract plugin_type: "topo_load_via_cdb"
+ > Extract domain_name: (get regex-match 1)
+
+State: 401
+ > EntryState: [400]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "Dom0::domain_update_cb: Method (\d+) for domain key=(\S+)"
+ > Description: "CM received domain update callback"
+ > primary_key: "pgtxn"
+ > primary_key: "topo_load_via_cdb"
+ > Extract next_expected: "request config post"
+
+State: 402
+ > EntryState: [401]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "request_config_post: Completed processing config request for (\S+) in (\d+) usec with status (\d+)"
+ > Description: "CDB completed post config"
+ > primary_key: "pgtxn"
+ > primary_key: "topo_load_via_cdb"
+ > Extract next_expected: "processing config request complete"
+
+State: 403
+ > EntryState: [402]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "request_config_post returned with status 0"
+ > Description: "Load Topology completed"
+ > primary_key: "pgtxn"
+ > primary_key: "topo_load_via_cdb"
+

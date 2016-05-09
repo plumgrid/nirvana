@@ -1,0 +1,149 @@
+PluginName: "director_bootup_stage2"
+
+SuccessSmartMessage:INFO: <!-- ": Service directory (" (:sd_name strm) ") on director <"(:my_host strm) "> <" (:ip strm) "> got initialized successfully (took "(get-time-taken (:startTime strm) (:time strm)) " seconds). All Director services are up and active." --!>
+
+FailSmartMessage:ERROR: <!-- ": Service directory (" (:sd_name strm) ") on director <"(:my_host strm) "> <" (:ip strm) "> failed to initialize. Last good known state is '" (:description strm)"'. Next expected state is '" (:next_expected strm) "'." --!>
+
+State: 100
+ > EntryState: [ ]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "EVENT 'service_directory boot' txn_id .* pid (\d+)"
+ > Description: "rest_gateway is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract plugin_type: "director_bootup_stage2"
+ > Extract pid: (get regex-match 1)
+ > Extract ttl: 10
+
+State: 101
+ > EntryState: [100]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "init:  my_station_id_ = (\S+) ip (\S+).*"
+ > Description: "service_directory ip"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract ip: (remove-from-end (get regex-match 2) "}")
+ > Extract next_expected: "rest_gateway is active"
+ > Extract ttl: 10
+
+State: 102
+ > EntryState: [101]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[init\]: rest_gateway is active"
+ > Description: "rest_gateway is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract sd_name: (:handler event)
+ > Extract next_expected: "cdb is active"
+
+State: 103
+ > EntryState: [102]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[init\]: cdb is active"
+ > Description: "cdb is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract next_expected: "health_monitor OR tenant_manager OR tunnel_service OR analytics_manager is active"
+
+State: 104
+ > EntryState: [103 105 106 107]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[operator\(\)\]: health_monitor is active"
+ > Description: "health_monitor is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract health_monitor: "active"
+ > Extract next_expected: ((str/join " OR " (get-next-expected-operator-service strm "health_monitor")) " is active")
+
+State: 105
+ > EntryState: [103 104 106 107]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[operator\(\)\]: tenant_manager is active"
+ > Description: "tenant_manager is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract tenant_manager: "active"
+ > Extract next_expected: ((str/join " OR " (get-next-expected-operator-service strm "tenant_manager")) " is active")
+
+State: 106
+ > EntryState: [103 104 105 107]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[operator\(\)\]: tunnel_service is active"
+ > Description: "tunnel_service is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract tunnel_service: "active"
+ > Extract next_expected: ((str/join " OR " (get-next-expected-operator-service strm "tunnel_service")) " is active")
+
+State: 107
+ > EntryState: [103 104 105 106]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[operator\(\)\]: analytics_manager is active"
+ > Description: "analytics_manager is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract analytics_manager: "active"
+ > Extract next_expected: ((str/join " OR " (get-next-expected-operator-service strm "analytics_manager")) " is active")
+
+State: 108
+ > EntryState: [107]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[init\]: CM is active"
+ > Description: "connectivity_manager is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract next_expected: "pem_master is active"
+
+State: 109
+ > EntryState: [108]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[init\]: pem_master is active"
+ > Description: "pem_master is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract next_expected: "vmw_agent is active"
+
+State: 110
+ > EntryState: [109]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[init\]: vmw_agent is active"
+ > Description: "vmw_agent is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract next_expected: "metadata is active"
+
+State: 111
+ > EntryState: [110]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[init\]: metadata is active"
+ > Description: "metadata is active"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract next_expected: "SD requesting CM to load topology from CDB"
+
+State: 112
+ > EntryState: [111]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[init\]: Requesting CM topology load"
+ > Description: "SD requesting CM to load topology from CDB"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract next_expected: "Setting topology ready status"
+
+State: 113
+ > EntryState: [112]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[init\]: Setting topology ready status"
+ > Description: "CM topology load is complete"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+ > Extract next_expected: "SD INIT completed."
+
+State: 114
+ > EntryState: [113]
+ > Function: "process-state-ek1-mk2val"
+ > MatchRe: "\[init\]: SD INIT Completed my_station_id_ = (\S+)"
+ > Description: "SD INIT Completed"
+ > primary_key: "director_bootup_stage2"
+ > primary_key: "pgtxn"
+

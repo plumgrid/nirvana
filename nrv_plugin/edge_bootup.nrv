@@ -1,0 +1,64 @@
+PluginName: "edge_bootup"
+SuccessSmartMessage:INFO: <!-- ": Compute node on <" (:my_host strm) "> <" (:ip strm) "> got initialized successfully (took "(get-time-taken (:startTime strm) (:time strm)) " seconds)." --!>
+FailSmartMessage:ERROR: <!-- ": Initialization of compute node on <" (:my_host strm) "> <" (:ip strm) "> failed. Last good known step is '"(:description strm) "'. Next expected step is '" (:next_expected strm) "'." --!>
+
+State: 200
+ > EntryState: []
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[SELite\]"
+ > Description: "SELite launched"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+ > Extract plugin_type: "edge_bootup"
+ > Extract ip: (convert-hexip-to-dottedip (get-substr-after-last-char (:handler strm) "_"))
+ > Extract next_expected: "station id"
+ > Extract ttl: 10
+
+State: 201
+ > EntryState: [200]
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[nos_monitor\]: my_station_id_ = (\S+)"
+ > Description: "station id"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+ > Extract station_id: (get regex-match 1)
+ > Extract next_expected: "Joined NOS"
+
+State: 202
+ > EntryState: [201]
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[nos_monitor\]: NOS Join Success; NOS Id=(\S+)"
+ > Description: "Joined NOS"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+ > Extract nos_id: (get regex-match 1)
+ > Extract next_expected: "launching SEM"
+
+State: 203
+ > EntryState: [202]
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[launch_sem\]: SEM is being launched"
+ > Description: "launching SEM"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+ > Extract next_expected: "launched SEM"
+
+State: 204
+ > EntryState: [203]
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[launch_sem\]: se_manager launched, pid :(\d+)"
+ > Description: "launched SEM"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+ > Extract sem_pid: (get regex-match 1)
+ > Extract next_expected: "SEM is ready"
+
+State: 205
+ > EntryState: [204]
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[rx_sm_msg_handler\]: SEM is ready"
+ > Description: "SEM is ready"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+
+

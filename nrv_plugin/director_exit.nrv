@@ -1,0 +1,39 @@
+PluginName: "director_exit"
+SuccessSmartMessage:WARN: <!-- ": Director <" (:my_host strm) "> <" (:ip strm) "> exited with reason '"(get regex-match 1) "'." --!>
+FailSmartMessage:ERROR: <!-- "Director exit got stuck" --!>
+
+State: 150
+ > EntryState: []
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[child_exit_monitor\]: PID (\d+) returned raw status (\S+) and exit type=\[.*\]"
+ > Description: "SMLite got child exit signal"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+ > Extract plugin_type: "director_exit"
+ > Extract ip: (convert-hexip-to-dottedip (get-substr-after-last-char (:handler strm) "_"))
+ > Extract pid: (get regex-match 1)
+ > Extract returned_raw_status: (get regex-match 2)
+ > Extract exit_type: (get regex-match 3)
+ > Extract next_expected: "Broker exit"
+ > Extract ttl: 10
+
+State: 151
+ > EntryState: [150]
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[child_exit_monitor\]: Broker pid (\d+) exited with status (\d)"
+ > Description: "Broker exit"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+ > Extract broker_pid: (get regex-match 1)
+ > Extract broker_exit_status: (get regex-match 2)
+ > Extract next_expected: "SMLite exit"
+
+State: 152
+ > EntryState: [151]
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[child_exit_monitor\]: SMLite exiting because ([A-Za-z\t .]+)"
+ > Description: "SMLite exit"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+
+

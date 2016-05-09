@@ -1,0 +1,34 @@
+PluginName: "director_bootup_stage1"
+SuccessSmartMessage:INFO: <!-- ": Broker and SM on director <" (:my_host strm) "> <" (:ip strm) "> got initialized successfully (took "(get-time-taken (:startTime strm) (:time strm)) " seconds)" --!>
+
+FailSmartMessage:ERROR: <!-- ": SMLite initialization failed on <" (:my_host strm) "> <" (:ip strm) ">. Last good known step is '" (:description strm) "'. Next expected step is '"(:next_expected strm) "'." --!>
+
+State: 50
+ > EntryState: [ ]
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[SMLite\]"
+ > Description: "SMLite launched"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+ > Extract plugin_type: "director_bootup_stage1"
+ > Extract ip: (convert-hexip-to-dottedip (get-substr-after-last-char (:handler strm) "_"))
+ > Extract next_expected: "Broker is ready"
+ > Extract ttl: 10
+
+State: 51
+ > EntryState: [50]
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[broker_monitor\]: Broker is ready"
+ > Description: "Broker is ready"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+ > Extract next_expected: "SM is ready"
+
+State: 52
+ > EntryState: [51]
+ > Function: "process-state-ek1-ek2"
+ > MatchRe: "\[rx_sm_msg_handler\]: SM is ready"
+ > Description: "SM is ready"
+ > primary_key: "handler"
+ > primary_key: "pgtxn"
+
