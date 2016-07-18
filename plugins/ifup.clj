@@ -8,7 +8,7 @@
   (fn [e]
     (process-state-ek1-mk2val
       360 [] e
-      #"EVENT 'ifup (\S+) (\S+) (\S+) (\S+) ip (\S+)' txn_id (\S+) pid (\d+)"
+      #"EVENT 'ifup (\S+) (\S+) (\S+) (\S+).* ip (\S+)' txn_id (\S+) pid (\d+)"
       "ifup started"
       "pgtxn"
       "ifup"

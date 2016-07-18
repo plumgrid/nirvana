@@ -5,7 +5,7 @@ FailSmartMessage:ERROR: <!-- "Interface (name:" (:name strm) ", type:" (:type st
 State: 360
  > EntryState: []
  > Function: "process-state-ek1-mk2val"
- > MatchRe: "EVENT 'ifup (\S+) (\S+) (\S+) (\S+) ip (\S+)' txn_id (\S+) pid (\d+)"
+ > MatchRe: "EVENT 'ifup (\S+) (\S+) (\S+) (\S+).* ip (\S+)' txn_id (\S+) pid (\d+)"
  > Description: "ifup started"
  > primary_key: "ifup"
  > primary_key: "pgtxn"
